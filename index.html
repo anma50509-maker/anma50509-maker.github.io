@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ollamaster — Android 上的自主 AI 助手</title>
+<meta name="description" content="Ollamaster：运行在 Android 上的 AI 对话应用。本地 Ollama / 云端兼容 / 官方云三源驱动，Agent 工具循环自动干活，热插拔插件与 MCP 扩展无限能力。免费、开源、MIT 协议。">
+<meta property="og:title" content="Ollamaster — Android 上的自主 AI 助手">
+<meta property="og:description" content="Agent 工具循环 · 热插拔插件 · MCP 客户端 · 长期记忆库 · 浏览器自动化">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 108 108'%3E%3Ccircle cx='54' cy='54' r='26' fill='none' stroke='%23E9C97E' stroke-width='5.5'/%3E%3Cpath d='M76.5 29.5 L82 35 L76.5 40.5 L71 35 Z' fill='%23E9C97E'/%3E%3Ccircle cx='54' cy='54' r='8' fill='%23E9C97E' opacity='0.2'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0d0f14;
+    --bg2:#101216;
+    --bg3:#131720;
+    --card:#171b25;
+    --card2:#1a1f2b;
+    --line:#262c3a;
+    --gold:#D4AF6A;
+    --gold2:#E9C97E;
+    --text:#e9e7e2;
+    --muted:#9a9790;
+    --muted2:#6b6a66;
+    --ok:#7bc47f;
+    --radius:16px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",Roboto,sans-serif;
+    line-height:1.7;
+    overflow-x:hidden;
+  }
+  ::selection{background:rgba(212,175,106,.3)}
+  a{color:var(--gold);text-decoration:none}
+  a:hover{color:var(--gold2)}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 24px}
+
+  /* ---------- 导航 ---------- */
+  header{
+    position:sticky;top:0;z-index:100;
+    background:rgba(13,15,20,.82);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav{display:flex;align-items:center;justify-content:space-between;height:62px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:19px;color:var(--text);letter-spacing:.3px}
+  .brand svg{width:30px;height:30px;flex:none}
+  .nav-links{display:flex;align-items:center;gap:26px}
+  .nav-links a{color:var(--muted);font-size:14px;font-weight:500;transition:color .2s}
+  .nav-links a:hover{color:var(--gold2)}
+  .nav-links .gh{
+    background:var(--card);border:1px solid var(--line);color:var(--text);
+    padding:7px 16px;border-radius:999px;font-size:13px;
+  }
+  .nav-links .gh:hover{border-color:var(--gold);color:var(--gold2)}
+  @media(max-width:760px){.nav-links a:not(.gh){display:none}}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    position:relative;
+    text-align:center;
+    padding:110px 24px 90px;
+    overflow:hidden;
+  }
+  .hero::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(600px 320px at 50% -10%, rgba(233,201,126,.10), transparent 70%),
+      radial-gradient(500px 300px at 85% 20%, rgba(212,175,106,.06), transparent 70%),
+      radial-gradient(500px 300px at 12% 30%, rgba(212,175,106,.05), transparent 70%);
+  }
+  .hero .badge{
+    display:inline-flex;align-items:center;gap:8px;
+    background:var(--card);border:1px solid var(--line);border-radius:999px;
+    padding:6px 16px;font-size:13px;color:var(--gold2);margin-bottom:28px;
+    position:relative;
+  }
+  .hero .badge .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+  .hero h1{
+    font-size:clamp(44px,9vw,84px);font-weight:800;letter-spacing:-1px;line-height:1.05;
+    background:linear-gradient(180deg,#fff 20%,#d8c9a3 60%,var(--gold) 100%);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    position:relative;
+  }
+  .hero .sub{
+    margin-top:18px;font-size:clamp(18px,3vw,24px);color:var(--muted);font-weight:400;
+    position:relative;
+  }
+  .hero .desc{
+    max-width:640px;margin:20px auto 0;color:var(--muted2);font-size:15.5px;position:relative;
+  }
+  .hero .cta{display:flex;gap:14px;justify-content:center;margin-top:38px;flex-wrap:wrap;position:relative}
+  .btn{
+    display:inline-flex;align-items:center;gap:9px;
+    padding:13px 30px;border-radius:12px;font-size:15.5px;font-weight:600;
+    transition:transform .15s,box-shadow .2s,background .2s;
+  }
+  .btn:hover{transform:translateY(-2px)}
+  .btn-primary{
+    background:linear-gradient(180deg,var(--gold2),var(--gold));color:#17120a;
+    box-shadow:0 8px 30px rgba(233,201,126,.25);
+  }
+  .btn-primary:hover{box-shadow:0 12px 36px rgba(233,201,126,.35);color:#17120a}
+  .btn-ghost{background:var(--card);border:1px solid var(--line);color:var(--text)}
+  .btn-ghost:hover{border-color:var(--gold);color:var(--gold2)}
+  .hero .meta{
+    margin-top:26px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap;
+    font-size:12.5px;color:var(--muted2);position:relative;
+  }
+  .hero .meta span{display:inline-flex;align-items:center;gap:5px}
+
+  /* ---------- 数据亮点 ---------- */
+  .stats{
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    background:var(--bg2);
+  }
+  .stats-inner{display:flex;justify-content:space-around;flex-wrap:wrap;padding:34px 0}
+  .stat{text-align:center;padding:8px 22px}
+  .stat b{display:block;font-size:32px;font-weight:800;color:var(--gold2);letter-spacing:-.5px}
+  .stat span{font-size:13px;color:var(--muted)}
+
+  /* ---------- 通用区 ---------- */
+  section{padding:84px 0}
+  .sec-head{text-align:center;max-width:640px;margin:0 auto 52px}
+  .sec-head .tag{
+    display:inline-block;font-size:12px;font-weight:700;letter-spacing:2px;color:var(--gold);
+    text-transform:uppercase;margin-bottom:12px;
+  }
+  .sec-head h2{font-size:clamp(26px,4.5vw,38px);font-weight:800;letter-spacing:-.5px}
+  .sec-head p{color:var(--muted);margin-top:12px;font-size:15.5px}
+
+  /* ---------- 特性网格 ---------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:26px 24px;transition:border-color .25s,transform .25s,background .25s;
+    position:relative;overflow:hidden;
+  }
+  .card:hover{border-color:rgba(233,201,126,.45);transform:translateY(-3px);background:var(--card2)}
+  .card .ico{
+    width:44px;height:44px;border-radius:12px;margin-bottom:16px;
+    display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,rgba(233,201,126,.16),rgba(233,201,126,.04));
+    border:1px solid rgba(233,201,126,.22);
+  }
+  .card .ico svg{width:22px;height:22px;stroke:var(--gold2);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .card h3{font-size:17px;font-weight:700;margin-bottom:8px}
+  .card p{font-size:14px;color:var(--muted)}
+
+  /* ---------- Agent 循环 ---------- */
+  .agent{background:var(--bg2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;max-width:960px;margin:0 auto}
+  .step{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 16px;text-align:center;
+    position:relative;
+  }
+  .step .n{
+    width:30px;height:30px;border-radius:50%;margin:0 auto 12px;
+    background:rgba(233,201,126,.14);border:1px solid rgba(233,201,126,.4);
+    color:var(--gold2);font-weight:800;font-size:14px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .step b{display:block;font-size:15px;margin-bottom:4px}
+  .step span{font-size:12.5px;color:var(--muted)}
+  .flow-arrow{display:none}
+
+  /* ---------- 代码区 ---------- */
+  .split{display:grid;grid-template-columns:1.1fr .9fr;gap:34px;align-items:center}
+  @media(max-width:860px){.split{grid-template-columns:1fr}}
+  .codeblock{
+    background:#0a0c11;border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  }
+  .codeblock .bar{
+    display:flex;align-items:center;gap:6px;padding:11px 14px;
+    border-bottom:1px solid var(--line);background:#0f1219;
+  }
+  .codeblock .bar i{width:11px;height:11px;border-radius:50%;display:inline-block}
+  .codeblock .bar i:nth-child(1){background:#ff5f57}.codeblock .bar i:nth-child(2){background:#febc2e}.codeblock .bar i:nth-child(3){background:#28c840}
+  .codeblock .bar em{font-style:normal;font-size:12px;color:var(--muted2);margin-left:8px}
+  .codeblock pre{padding:18px 20px;overflow-x:auto;font-family:"SF Mono",Consolas,Menlo,monospace;font-size:12.8px;line-height:1.75}
+  .codeblock .k{color:#c792ea}.codeblock .s{color:#a5d6a7}.codeblock .c{color:#63636b}.codeblock .p{color:var(--gold2)}
+
+  .points{list-style:none}
+  .points li{
+    display:flex;gap:12px;padding:13px 0;border-bottom:1px dashed var(--line);
+    font-size:14.5px;color:var(--muted);
+  }
+  .points li:last-child{border-bottom:none}
+  .points .ck{color:var(--gold2);font-weight:700;flex:none}
+
+  /* ---------- 架构 ---------- */
+  .arch{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+  .a-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .a-card code{
+    display:block;font-family:"SF Mono",Consolas,monospace;font-size:13px;color:var(--gold2);
+    margin-bottom:6px;font-weight:600;
+  }
+  .a-card p{font-size:13px;color:var(--muted)}
+
+  /* ---------- 下载 ---------- */
+  .download{border-top:1px solid var(--line);background:var(--bg2)}
+  .dl-box{
+    max-width:760px;margin:0 auto;background:var(--card);border:1px solid var(--line);
+    border-radius:20px;padding:42px 38px;text-align:center;
+    background-image:radial-gradient(420px 200px at 50% -20%, rgba(233,201,126,.08), transparent 70%);
+  }
+  .dl-box h3{font-size:26px;font-weight:800}
+  .dl-box .ver{
+    display:inline-flex;align-items:center;gap:8px;margin:14px 0 8px;
+    background:rgba(233,201,126,.1);border:1px solid rgba(233,201,126,.3);color:var(--gold2);
+    padding:4px 14px;border-radius:999px;font-size:13px;font-weight:600;
+  }
+  .dl-box .req{font-size:13px;color:var(--muted);margin-bottom:26px}
+  .dl-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .dl-note{margin-top:20px;font-size:12.5px;color:var(--muted2)}
+  .dl-note a{color:var(--gold)}
+
+  /* ---------- 页脚 ---------- */
+  footer{border-top:1px solid var(--line);padding:46px 0 60px;background:var(--bg)}
+  .foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+  .foot .brand{font-size:16px}
+  .foot .copy{font-size:13px;color:var(--muted2)}
+  .foot .links{display:flex;gap:20px}
+  .foot .links a{font-size:13px;color:var(--muted)}
+  .foot .links a:hover{color:var(--gold2)}
+  .license{margin-top:22px;font-size:12px;color:var(--muted2);max-width:1100px;margin-left:auto;margin-right:auto;padding:0 24px}
+
+  @media(max-width:600px){
+    section{padding:60px 0}
+    .hero{padding:80px 20px 60px}
+    .dl-box{padding:32px 22px}
+  }
+</style>
+</head>
+<body>
+
+<!-- 导航 -->
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="#top">
+      <svg viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="54" cy="54" r="26" stroke="#E9C97E" stroke-width="5.5" fill="none"/>
+        <path d="M76.5 29.5 L82 35 L76.5 40.5 L71 35 Z" fill="#E9C97E"/>
+        <circle cx="54" cy="54" r="8" fill="#E9C97E" opacity="0.2"/>
+        <circle cx="54" cy="54" r="3.2" fill="#E9C97E"/>
+      </svg>
+      Ollamaster
+    </a>
+    <nav class="nav-links">
+      <a href="#features">特性</a>
+      <a href="#agent">Agent 循环</a>
+      <a href="#plugin">插件系统</a>
+      <a href="#arch">架构</a>
+      <a class="gh" href="https://github.com/anma50509-maker/Ollamaster" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+  </div>
+</header>
+
+<!-- Hero -->
+<section class="hero" id="top">
+  <div class="badge"><span class="dot"></span> v1.8.1 · 免费开源 · MIT License</div>
+  <h1>Ollamaster</h1>
+  <p class="sub">Android 上的自主 AI 助手</p>
+  <p class="desc">本地 Ollama、云端 OpenAI 兼容接口与官方云三源驱动；Agent 工具循环让 AI 自动调浏览器、跑命令、读写文件；热插拔插件与 MCP 客户端把能力扩展到无限。</p>
+  <div class="cta">
+    <a class="btn btn-primary" href="https://github.com/anma50509-maker/Ollamaster/releases" target="_blank" rel="noopener">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      下载 APK
+    </a>
+    <a class="btn btn-ghost" href="https://github.com/anma50509-maker/Ollamaster" target="_blank" rel="noopener">查看源码</a>
+  </div>
+  <div class="meta">
+    <span>🤖 3 种模型源</span>
+    <span>🧩 热插拔插件</span>
+    <span>🔌 MCP 客户端</span>
+    <span>🧠 长期记忆库</span>
+  </div>
+</section>
+
+<!-- 数据亮点 -->
+<div class="stats">
+  <div class="wrap stats-inner">
+    <div class="stat"><b>3</b><span>模型源：本地/云端/官方</span></div>
+    <div class="stat"><b>8+</b><span>工具类别：文件/命令/网页/浏览器</span></div>
+    <div class="stat"><b>0</b><span>成本，100% 免费开源</span></div>
+    <div class="stat"><b>∞</b><span>插件与 MCP 可扩展能力</span></div>
+  </div>
+</div>
+
+<!-- 特性 -->
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tag">Features</span>
+      <h2>一台手机，一个完整的 AI 工作台</h2>
+      <p>不是简单的聊天框——Ollamaster 把 Agent、工具、记忆、插件全部装进 Android。</p>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M12 11v5M9.5 13.5h5"/></svg></div>
+        <h3>三种模型源</h3>
+        <p>本地 Ollama 私密离线、云端 OpenAI 兼容接口、Ollama 官方云，随时切换，不绑定单一厂商。</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></div>
+        <h3>Agent 工具循环</h3>
+        <p>AI 自主规划并调用文件、命令、网页、浏览器、视觉、技能、MCP、插件等工具，直到任务完成。</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/></svg></div>
+        <h3>浏览器自动化 + 视觉</h3>
+        <p>内嵌浏览器可被 AI 打开网页、提取文本、模拟点击输入、滚动、执行 JS、截图；截图交给视觉模型「看图→点击」闭环操作。</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><rect x="7" y="7" width="10" height="10" rx="2"/></svg></div>
+        <h3>热插拔插件系统</h3>
+        <p>声明式 JSON 定义工具、页面、技能与人设卡，安装立即生效，无需重新编译，AI 自己就能造插件。</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M10 20a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/><path d="M12 8v10"/><path d="M8 10h8"/><path d="M4 14a8 8 0 0 1 16 0"/></svg></div>
+        <h3>MCP 客户端</h3>
+        <p>支持 Streamable HTTP 协议，连接外部 MCP 服务器，把专业工具、数据源接入你的 AI 对话。</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <h3>长期记忆库</h3>
+        <p>抽屉式嵌套分类记忆，AI 可读写、搜索、管理跨会话的长期记忆，越用越懂你。</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+        <h3>技能与人格系统</h3>
+        <p>自定义注入系统提示与人设卡，塑造 AI 的行为、语气与身份；人设头像自动应用到对话气泡。</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg></div>
+        <h3>语音合成 TTS</h3>
+        <p>Edge 免费 TTS 与 HTTP API 双通道，自动朗读 AI 回复，发音自然、支持中英文。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Agent 循环 -->
+<section class="agent" id="agent">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tag">Agent Loop</span>
+      <h2>让 AI 自己动手干活</h2>
+      <p>Ollamaster 内置完整 Agent 循环——你只负责说需求，剩下的交给它。</p>
+    </div>
+    <div class="flow">
+      <div class="step"><div class="n">1</div><b>理解任务</b><span>解析你的意图与上下文</span></div>
+      <div class="step"><div class="n">2</div><b>规划步骤</b><span>拆解为可执行的工具调用</span></div>
+      <div class="step"><div class="n">3</div><b>调用工具</b><span>文件/命令/网页/浏览器/MCP</span></div>
+      <div class="step"><div class="n">4</div><b>观察结果</b><span>读取返回，修正策略</span></div>
+      <div class="step"><div class="n">5</div><b>完成任务</b><span>总结并汇报完成情况</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 插件系统 -->
+<section id="plugin">
+  <div class="wrap split">
+    <div>
+      <span class="tag" style="letter-spacing:2px;font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase">Plugin System</span>
+      <h2 style="font-size:clamp(24px,4vw,34px);font-weight:800;margin:10px 0 16px;letter-spacing:-.5px">热插拔，改功能不用改代码</h2>
+      <p style="color:var(--muted);font-size:15px;margin-bottom:18px">插件就是一份 JSON：声明工具、页面、技能与人设卡，安装即生效。甚至可以由 AI 自己生成插件来扩展自己——相当于应用级「自我进化」。</p>
+      <ul class="points">
+        <li><span class="ck">✓</span> 安装 / 卸载 / 启用 / 禁用，即时生效，无需重启</li>
+        <li><span class="ck">✓</span> 工具支持 shell / HTTP / JavaScript 处理器</li>
+        <li><span class="ck">✓</span> 声明式 UI JSON 自动渲染原生 Android 页面</li>
+        <li><span class="ck">✓</span> 插件与源码仓库隔离，安全可控</li>
+      </ul>
+    </div>
+    <div class="codeblock">
+      <div class="bar"><i></i><i></i><i></i><em>plugin.json</em></div>
+      <pre><span class="p">{</span>
+  <span class="k">"id"</span>: <span class="s">"my_plugin"</span>,
+  <span class="k">"name"</span>: <span class="s">"我的插件"</span>,
+  <span class="k">"version"</span>: <span class="s">"1.0.0"</span>,
+  <span class="k">"tools"</span>: [{
+    <span class="k">"name"</span>: <span class="s">"tool_name"</span>,
+    <span class="k">"description"</span>: <span class="s">"..."</span>,
+    <span class="k">"handler"</span>: {
+      <span class="k">"type"</span>: <span class="s">"shell"</span>,
+      <span class="k">"command"</span>: <span class="s">"..."</span>
+    }
+  }],
+  <span class="k">"pages"</span>: [{
+    <span class="k">"id"</span>: <span class="s">"page_id"</span>,
+    <span class="k">"label"</span>: <span class="s">"页面"</span>,
+    <span class="k">"layout"</span>: { <span class="k">"type"</span>: <span class="s">"column"</span> }
+  }],
+  <span class="k">"skills"</span>: [],
+  <span class="k">"personas"</span>: []
+<span class="p">}</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- 架构 -->
+<section id="arch" style="background:var(--bg2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tag">Architecture</span>
+      <h2>小而美的工程架构</h2>
+      <p>整个 APK 仅约 200KB，模块化设计，每个核心能力都有清晰的职责边界。</p>
+    </div>
+    <div class="arch">
+      <div class="a-card"><code>ChatPage</code><p>对话引擎 / Agent 循环，驱动工具调用与自主执行</p></div>
+      <div class="a-card"><code>LocalTools</code><p>内置工具集：文件、命令、网页、浏览器、视觉、技能、MCP、插件管理</p></div>
+      <div class="a-card"><code>WebPage</code><p>内置浏览器 + 自动化宿主：evalJs / 截图 / 反爬虫指纹</p></div>
+      <div class="a-card"><code>Plugins.*</code><p>热插拔插件系统：安装、UI 渲染、工具执行</p></div>
+      <div class="a-card"><code>McpClient</code><p>MCP Streamable HTTP 客户端，外接 MCP 服务器</p></div>
+      <div class="a-card"><code>Ollama / Cloud</code><p>本地 Ollama 与云端 OpenAI 兼容协议双驱动</p></div>
+      <div class="a-card"><code>MemoryStore</code><p>抽屉式嵌套记忆库：存储层 + 管理页面</p></div>
+      <div class="a-card"><code>TtsEngine</code><p>语音合成引擎：Edge 免费 / HTTP API 双通道</p></div>
+      <div class="a-card"><code>Skills / Personas</code><p>技能注入与人格卡系统</p></div>
+      <div class="a-card"><code>AgentService</code><p>长任务前台保活，让 Agent 安心干活</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 下载 -->
+<section class="download" id="download">
+  <div class="wrap">
+    <div class="dl-box">
+      <h3>立即体验 Ollamaster</h3>
+      <div class="ver">v1.8.1 · versionCode 23</div>
+      <p class="req">要求 Android 8.0+（minSdk 26）｜APK 约 200KB｜支持本地 Ollama / 云端模型</p>
+      <div class="dl-btns">
+        <a class="btn btn-primary" href="https://github.com/anma50509-maker/Ollamaster/releases/latest/download/Ollamaster.apk" target="_blank" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          下载 APK
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/anma50509-maker/Ollamaster/releases" target="_blank" rel="noopener">所有版本 Releases</a>
+      </div>
+      <p class="dl-note">无法直接下载？前往 <a href="https://github.com/anma50509-maker/Ollamaster/releases" target="_blank" rel="noopener">GitHub Releases 页面</a> 获取。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 页脚 -->
+<footer>
+  <div class="wrap foot">
+    <a class="brand" href="#top">
+      <svg width="24" height="24" viewBox="0 0 108 108" fill="none"><circle cx="54" cy="54" r="26" stroke="#E9C97E" stroke-width="5.5" fill="none"/><path d="M76.5 29.5 L82 35 L76.5 40.5 L71 35 Z" fill="#E9C97E"/><circle cx="54" cy="54" r="3.2" fill="#E9C97E"/></svg>
+      Ollamaster
+    </a>
+    <div class="links">
+      <a href="https://github.com/anma50509-maker/Ollamaster" target="_blank" rel="noopener">源码</a>
+      <a href="https://github.com/anma50509-maker/Ollamaster/releases" target="_blank" rel="noopener">下载</a>
+      <a href="https://github.com/anma50509-maker/Ollamaster/issues" target="_blank" rel="noopener">反馈</a>
+    </div>
+  </div>
+  <div class="license">
+    © 2026 Ollamaster · 基于 <a href="https://github.com/anma50509-maker/Ollamaster/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a> 开源，可自由使用、修改与分发（含商业用途），仅需保留版权声明。
+  </div>
+</footer>
+
+</body>
+</html>
